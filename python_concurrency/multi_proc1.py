@@ -9,11 +9,11 @@ q = Queue()
 
 x1 = Process(
     target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[:int(len(points)/2)], points),
+    args=(points[:len(points) // 2], points),
 )
 x2 = Process(
     target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[int(len(points)/2):], points),
+    args=(points[len(points) // 2:], points),
 )
 x1.start()
 x2.start()

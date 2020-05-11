@@ -8,11 +8,11 @@ points = generate_points()
 q = queue.Queue()
 x1 = threading.Thread(
     target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[:int(len(points)/2)], points),
+    args=(points[:len(points) // 2], points),
 )
 x2 = threading.Thread(
     target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[int(len(points)/2):], points),
+    args=(points[len(points) // 2:], points),
 )
 x1.start()
 x2.start()
