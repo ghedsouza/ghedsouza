@@ -5,7 +5,7 @@ from algorithm import closest_pair, distance, generate_points
 
 
 def segment_list(l, N):
-    chunk_size, remainder = len(l) // N, len(l) % N
+    chunk_size, remainder = divmod(len(l), N)
     first, rest = l[:chunk_size + remainder], l[chunk_size + remainder:]
     return itertools.chain([first], zip(*[iter(rest)] * chunk_size))
 

@@ -16,7 +16,6 @@
       </h1>
       <p>By <a href="/">Edward D'Souza</a> (May 9th, 2020)</p>
       <hr />
-      <h2>Introduction</h2>
       <p>
         I've always been afraid of concurrency in Python. Threading isn't
         supposed to be a good idea because of the GIL. Multi-processing sounds
@@ -25,7 +24,23 @@
         parallelizing tasks with multiple processes is both effective and
         surpisingly simple in Python.
       </p>
-      <h2>Example Problem</h2>
+      <h1>Sections</h1>
+      <ul>
+        <li><a href="#example-problem">Example problem</a></li>
+        <ul>
+          <li><a href="#basic-algorithm">Basic algorithm</a></li>
+        </ul>
+        <li><a href="#single-thread">Single-threaded performance</a></li>
+        <li><a href="#multi-thread">Multi-threaded performance</a></li>
+        <li><a href="#multi-proc">Multi-process performance</a></li>
+        <ul>
+          <li>
+            <a href="#basic-multi-process">Initial multi-process solution</a>
+          </li>
+          <li><a href="#maxing-parallelism">Maxing out the parallelism</a></li>
+        </ul>
+      </ul>
+      <h2 id="example-problem">Example Problem</h2>
       <p>
         We are going to explore concurrency in Python using this example
         problem:
@@ -38,7 +53,7 @@
         This problem has a O(n*log(n)) solution, but to keep things simple,
         we're going to use the naive O(n^2) solution.
       </p>
-      <h2>Basic algorithm</h2>
+      <h3 id="basic-algorithm">Basic algorithm</h3>
       <p>
         Before getting into concurrency, let's start with the basic solution to
         this problem.
@@ -96,7 +111,7 @@ def generate_points(num_points=NUM_POINTS):
           </code>
         </pre>
       </figure>
-      <h2>Single-threaded performance</h2>
+      <h2 id="single-thread">Single-threaded performance</h2>
       <p>
         As a baseline, let's look at the how long it takes the algorithm to
         complete using a single thread. Note that I'm using NUM_POINTS = 3500
@@ -128,7 +143,7 @@ sys     0m0.056s
           </code>
         </pre>
       </figure>
-      <h2>Multi-threaded performance</h2>
+      <h2 id="multi-thread">Multi-threaded performance</h2>
       <p>
         In a CPU bound task, there shouldn't be any benefit to using multiple
         threads, because of the
@@ -184,13 +199,13 @@ sys	0m0.135s
         </pre>
       </figure>
       <p>As expected, there was no speed up with multiple threads.</p>
-      <h2>Multi-process performance</h2>
+      <h2 id="multi-proc">Multi-process performance</h2>
       <p>
         Our final move is using multiple processes. The multi-threading code
         above can be adapted with minimal changes to make it use multiple
         processes instead.
       </p>
-      <h3>Initial Solution</h3>
+      <h3 id="basic-multi-process">Initial Solution</h3>
       <figure>
         <figcaption>multi_proc1.py</figcaption>
         <pre>
@@ -242,7 +257,7 @@ sys	0m0.073s
         Here we see the expected, ideal 2x speed up by splitting the work across
         two processes.
       </p>
-      <h3>Maxing out the parallelism</h3>
+      <h3 id="maxing-parallelism">Maxing out the parallelism</h3>
       <p>
         We can clean up the code a little with multiprocessing.Pool and bump the
         level of parallelism to match the system's CPU count.
@@ -258,7 +273,7 @@ from algorithm import closest_pair, distance, generate_points
 
 
 def segment_list(l, N):
-    chunk_size, remainder = len(l) // N, len(l) % N
+    chunk_size, remainder = divmod(len(l), N)
     first, rest = l[:chunk_size + remainder], l[chunk_size + remainder:]
     return itertools.chain([first], zip(*[iter(rest)] * chunk_size))
 
