@@ -104,7 +104,7 @@ def generate_points(num_points=NUM_POINTS):
         machine.
       </p>
       <figure>
-        <figcaption>single_threaded.py</figcaption>
+        <figcaption>single_thread1.py</figcaption>
         <pre>
           <code>
 from algorithm import closest_pair, generate_points
@@ -116,7 +116,7 @@ print(closest)
         </pre>
       </figure>
       <figure>
-        <figcaption>single_threaded.py results</figcaption>
+        <figcaption>single_thread1.py results</figcaption>
         <pre>
           <code>
 $ time python single_thread1.py
@@ -138,7 +138,7 @@ sys     0m0.056s
         >. But we're going to do it anyway just to see what happens.
       </p>
       <figure>
-        <figcaption>multi_threaded.py</figcaption>
+        <figcaption>multi_thread1.py</figcaption>
         <pre>
           <code>
 import queue
@@ -171,7 +171,7 @@ print(closest)
         </pre>
       </figure>
       <figure>
-        <figcaption>multi_threaded.py results</figcaption>
+        <figcaption>multi_thread1.py results</figcaption>
         <pre>
           <code>
 $ time python multi_thread1.py
@@ -190,8 +190,9 @@ sys	0m0.135s
         above can be adapted with minimal changes to make it use multiple
         processes instead.
       </p>
+      <h3>Initial Solution</h3>
       <figure>
-        <figcaption>multi_process.py</figcaption>
+        <figcaption>multi_proc1.py</figcaption>
         <pre>
           <code>
 from multiprocessing import Process, Queue
@@ -225,7 +226,7 @@ print(closest)
         </pre>
       </figure>
       <figure>
-        <figcaption>multi_process.py results</figcaption>
+        <figcaption>multi_proc1.py results</figcaption>
         <pre>
           <code>
 $ time python multi_process.py
@@ -240,6 +241,65 @@ sys	0m0.073s
       <p>
         Here we see the expected, ideal 2x speed up by splitting the work across
         two processes.
+      </p>
+      <h3>Maxing out the parallelism</h3>
+      <p>
+        We can clean up the code a little with multiprocessing.Pool and bump the
+        level of parallelism to match the system's CPU count.
+      </p>
+      <figure>
+        <figcaption>multi_proc2.py</figcaption>
+        <pre>
+          <code>
+import itertools
+import multiprocessing
+
+from algorithm import closest_pair, distance, generate_points
+
+
+def segment_list(l, N):
+    chunk_size, remainder = len(l) // N, len(l) % N
+    first, rest = l[:chunk_size + remainder], l[chunk_size + remainder:]
+    return itertools.chain([first], zip(*[iter(rest)] * chunk_size))
+
+
+points = generate_points()
+
+N = multiprocessing.cpu_count()  # 8 for me.
+segments = segment_list(points, N)
+
+def do_it(segment):
+    return closest_pair(segment, points)
+
+pool = multiprocessing.Pool(processes=N)
+results = pool.map(do_it, segments)
+
+closest = min(results, key=lambda res: distance(res[0], res[1]))
+print(closest)
+          </code>
+        </pre>
+      </figure>
+      <figure>
+        <figcaption>multi_proc2.py results</figcaption>
+        <pre>
+          <code>
+$ time python multi_proc2.py
+((49, 97), (49, 96))
+
+real	0m5.277s
+user	0m38.252s
+sys	0m0.168s
+          </code>
+        </pre>
+      </figure>
+      <p>
+        Note that I only have 4 cores. "cpu_count" returns 8 on my system due to
+        hyperthreading, but since I'm executing the exact same function on all
+        processes, I probably don't see much benefit beyond 4 parallel tasks.
+      </p>
+      <p>
+        Given all that, reducing total execution time to ~25% of the single
+        threaded solution is pretty good!
       </p>
     </div>
   </body>
