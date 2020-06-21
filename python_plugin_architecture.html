@@ -28,8 +28,11 @@
       <p>
         While the ideas might seem like over engineering in the toy example
         here, I think they would be valuable in more realistic contexts with
-        more complicated code and when you multiple people or teams working
+        more complicated code and when you have multiple people or teams working
         together.
+      </p>
+      <p>
+        (The example here and some code is taken from "Clean Architecture".)
       </p>
       <h1>Sections</h1>
       <ul>
@@ -39,21 +42,32 @@
       </ul>
       <h2 id="example-problem">Example Problem</h2>
       <p>
-        We are going to explore concurrency in Python using this example
-        problem:
+        The example problem we'll use is that you're writing an encrypter
+        program. It has to take in characters from stdin, encrypt them using a
+        translation table, and write the output to stdout.
       </p>
       <p>
-        Given a set of 2D points ({(x0, y0), (x1, y1), etc.}), find the closest
-        pair.
+        First, the easy part. The functional data-manipulation component that
+        simple translates a character to its encrypted form using a shift
+        cipher.
       </p>
+      <figure>
+        <figcaption>translate.py</figcaption>
+        <pre>
+          <code>
+def translate(char: str):
+    shift = 1
+    letters = string.ascii_lowercase
+    if char in letters:
+        return letters[(letters.index(char) + shift) % len(letters)]
+    return char
+          </code>
+        </pre>
+      </figure>
+      <h3 id="basic-algorithm">Basic Solution</h3>
       <p>
-        This problem has a O(n*log(n)) solution, but to keep things simple,
-        we're going to use the naive O(n^2) solution.
-      </p>
-      <h3 id="basic-algorithm">Basic algorithm</h3>
-      <p>
-        Before getting into concurrency, let's start with the basic solution to
-        this problem.
+        Here is a straight-forward solution. It's probably what I would write by
+        default when faced with the above requirements.
       </p>
       <p>
         To make things more flexible later, we're going to structure it as a
@@ -77,34 +91,7 @@ print(closest_pair(points, points))  # --> ((0, 1), (2, 3))
         <figcaption>algorithm.py</figcaption>
         <pre>
           <code>
-import math
-from random import randrange, seed
 
-
-def closest_pair(from_set, to_set):
-    closest_pair = None
-    closest_distance = math.inf
-
-    for a in from_set:
-        for b in to_set:
-            if a != b:
-                ab_distance = distance(a, b)
-                if ab_distance < closest_distance:
-                    closest_pair = (a, b)
-                    closest_distance = ab_distance
-
-    return closest_pair
-
-
-def distance(a, b):  # https://docs.python.org/3.8/library/math.html#math.dist
-    return math.sqrt(sum((ad - bd) ** 2 for ad, bd in zip(a, b)))
-
-
-NUM_POINTS = 3500
-
-def generate_points(num_points=NUM_POINTS):
-    seed(0)
-    return [(randrange(0, 100), randrange(0, 100)) for _ in range(num_points)]
           </code>
         </pre>
       </figure>
@@ -153,32 +140,7 @@ sys     0m0.056s
         <figcaption>multi_thread1.py</figcaption>
         <pre>
           <code>
-import queue
-import threading
 
-from algorithm import closest_pair, distance, generate_points
-
-points = generate_points()
-
-q = queue.Queue()
-x1 = threading.Thread(
-    target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[:len(points) // 2], points),
-)
-x2 = threading.Thread(
-    target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[len(points) // 2:], points),
-)
-x1.start()
-x2.start()
-x1.join()
-x2.join()
-
-res1 = q.get()
-res2 = q.get()
-
-closest = min([res1, res2], key=lambda res: distance(res[0], res[1]))
-print(closest)
           </code>
         </pre>
       </figure>
