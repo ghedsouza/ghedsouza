@@ -2,12 +2,36 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>A Python Concurrency Tutorial</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/themes/prism.min.css"
+    />
   </head>
   <body>
     <style>
+      body {
+        font-family: "Roboto", sans-serif;
+      }
       .content {
         max-width: 700px;
         margin: auto;
+      }
+      .end {
+        font-size: 50px;
+        direction: rtl;
+      }
+      code {
+        font-size: 14px;
+      }
+      figure {
+        margin-block-start: 25px;
+        margin-block-end: 25px;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
       }
     </style>
     <div class="content">
@@ -24,6 +48,7 @@
         parallelizing tasks with multiple processes is both effective and
         surpisingly simple in Python.
       </p>
+      <p>(Note: Code requires Python 3.8)</p>
       <h1>Sections</h1>
       <ul>
         <li><a href="#example-problem">Example problem</a></li>
@@ -67,81 +92,58 @@
       </p>
       <figure>
         <figcaption>main.py</figcaption>
-        <pre>
-          <code>
-from algorithm import closest_pair
+        <pre><code class="language-python">from algorithm import closest_pair
 
 points = [(0,1), (9, 10), (2, 3)]
-print(closest_pair(points, points))  # --> ((0, 1), (2, 3))
-          </code>
-        </pre>
+print(closest_pair(points, points))  # --> ((0, 1), (2, 3))</code></pre>
       </figure>
       <figure>
         <figcaption>algorithm.py</figcaption>
-        <pre>
-          <code>
-import math
+        <pre><code class="language-python">import math
 from random import randrange, seed
 
 
 def closest_pair(from_set, to_set):
-    closest_pair = None
-    closest_distance = math.inf
+    best_pair = None
+    best_distance = math.inf
 
     for a in from_set:
         for b in to_set:
             if a != b:
-                ab_distance = distance(a, b)
-                if ab_distance < closest_distance:
-                    closest_pair = (a, b)
-                    closest_distance = ab_distance
+                if (ab_distance := math.dist(a, b)) < best_distance:
+                    best_pair = (a, b)
+                    best_distance = ab_distance
 
-    return closest_pair
-
-
-def distance(a, b):  # https://docs.python.org/3.8/library/math.html#math.dist
-    return math.sqrt(sum((ad - bd) ** 2 for ad, bd in zip(a, b)))
+    return best_pair
 
 
-NUM_POINTS = 3500
+NUM_POINTS = 10_000
+
 
 def generate_points(num_points=NUM_POINTS):
     seed(0)
-    return [(randrange(0, 100), randrange(0, 100)) for _ in range(num_points)]
-          </code>
-        </pre>
+    return [(randrange(0, 100), randrange(0, 100)) for _ in range(num_points)]</code></pre>
       </figure>
       <h2 id="single-thread">Single-threaded performance</h2>
       <p>
         As a baseline, let's look at the how long it takes the algorithm to
-        complete using a single thread. Note that I'm using NUM_POINTS = 3500
+        complete using a single thread. Note that I'm using NUM_POINTS = 10,000
         for all the examples to make the problem sizable enough to measure on my
         machine.
       </p>
       <figure>
         <figcaption>single_thread1.py</figcaption>
-        <pre>
-          <code>
-from algorithm import closest_pair, generate_points
+        <pre><code class="language-python">from algorithm import closest_pair, generate_points
 
 points = generate_points()
 closest = closest_pair(points, points)
-print(closest)
-          </code>
-        </pre>
+print(closest)</code></pre>
       </figure>
       <figure>
         <figcaption>single_thread1.py results</figcaption>
-        <pre>
-          <code>
-$ time python single_thread1.py
+        <pre><code class="language-shell">$ time python single_thread1.py
 ((49, 97), (49, 96))
-
-real    0m18.904s
-user    0m18.665s
-sys     0m0.056s
-          </code>
-        </pre>
+python single_thread1.py  16.00s user 0.06s system 99% cpu 16.096 total</code></pre>
       </figure>
       <h2 id="multi-thread">Multi-threaded performance</h2>
       <p>
@@ -154,9 +156,7 @@ sys     0m0.056s
       </p>
       <figure>
         <figcaption>multi_thread1.py</figcaption>
-        <pre>
-          <code>
-import queue
+        <pre><code class="language-python">import queue
 import threading
 
 from algorithm import closest_pair, distance, generate_points
@@ -181,22 +181,13 @@ res1 = q.get()
 res2 = q.get()
 
 closest = min([res1, res2], key=lambda res: distance(res[0], res[1]))
-print(closest)
-          </code>
-        </pre>
+print(closest)</code></pre>
       </figure>
       <figure>
         <figcaption>multi_thread1.py results</figcaption>
-        <pre>
-          <code>
-$ time python multi_thread1.py
-((7, 42), (8, 42))
-
-real	0m18.996s
-user	0m18.710s
-sys	0m0.135s
-          </code>
-        </pre>
+        <pre><code class="language-shell">$ time python multi_thread1.py
+((49, 97), (49, 96))
+python multi_thread1.py  16.43s user 0.15s system 99% cpu 16.584 total</code></pre>
       </figure>
       <p>As expected, there was no speed up with multiple threads.</p>
       <h2 id="multi-proc">Multi-process performance</h2>
@@ -208,50 +199,38 @@ sys	0m0.135s
       <h3 id="basic-multi-process">Initial Solution</h3>
       <figure>
         <figcaption>multi_proc1.py</figcaption>
-        <pre>
-          <code>
+        <pre><code class="language-python">import math
 from multiprocessing import Process, Queue
-import threading
+from algorithm import closest_pair, generate_points
 
-from algorithm import closest_pair, distance, generate_points
 
-points = generate_points()
+def doit(q, *args):
+    q.put(closest_pair(*args))
 
-q = Queue()
 
-x1 = Process(
-    target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[:len(points) // 2], points),
-)
-x2 = Process(
-    target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[len(points) // 2:], points),
-)
-x1.start()
-x2.start()
-x1.join()
-x2.join()
+if __name__ == "__main__":
+    q = Queue()
 
-res1 = q.get()
-res2 = q.get()
+    points = generate_points()
 
-closest = min([res1, res2], key=lambda res: distance(res[0], res[1]))
-print(closest)
-          </code>
-        </pre>
+    x1 = Process(target=doit, args=(q, points[: len(points) // 2], points),)
+    x2 = Process(target=doit, args=(q, points[len(points) // 2 :], points),)
+    x1.start()
+    x2.start()
+    x1.join()
+    x2.join()
+
+    res1 = q.get()
+    res2 = q.get()
+
+    closest = min([res1, res2], key=lambda res: math.dist(res[0], res[1]))
+    print(closest)</code></pre>
       </figure>
       <figure>
         <figcaption>multi_proc1.py results</figcaption>
-        <pre>
-          <code>
-$ time python multi_process.py
-((7, 42), (8, 42))
-
-real	0m9.647s
-user	0m19.009s
-sys	0m0.073s
-          </code>
-        </pre>
+        <pre><code class="language-shell">$ t time python multi_proc1.py
+((49, 97), (49, 96))
+python multi_proc1.py  16.69s user 0.10s system 196% cpu 8.540 total</code></pre>
       </figure>
       <p>
         Here we see the expected, ideal 2x speed up by splitting the work across
@@ -264,48 +243,41 @@ sys	0m0.073s
       </p>
       <figure>
         <figcaption>multi_proc2.py</figcaption>
-        <pre>
-          <code>
-import itertools
+        <pre><code class="language-python">import itertools
 import multiprocessing
+import math
 
-from algorithm import closest_pair, distance, generate_points
+from algorithm import closest_pair, generate_points
 
 
 def segment_list(l, N):
     chunk_size, remainder = divmod(len(l), N)
-    first, rest = l[:chunk_size + remainder], l[chunk_size + remainder:]
+    first, rest = l[: chunk_size + remainder], l[chunk_size + remainder :]
     return itertools.chain([first], zip(*[iter(rest)] * chunk_size))
 
 
-points = generate_points()
-
-N = multiprocessing.cpu_count()  # 8 for me.
-segments = segment_list(points, N)
-
-def do_it(segment):
+def do_it(segment, points):
     return closest_pair(segment, points)
 
-pool = multiprocessing.Pool(processes=N)
-results = pool.map(do_it, segments)
 
-closest = min(results, key=lambda res: distance(res[0], res[1]))
-print(closest)
-          </code>
-        </pre>
+if __name__ == "__main__":
+    N = multiprocessing.cpu_count()  # 8 for me.
+
+    points = generate_points()
+    segments = list(segment_list(points, N))
+    proc_args = list(zip(segments, [points] * N))
+
+    pool = multiprocessing.Pool(processes=N)
+    results = pool.starmap(do_it, proc_args)
+
+    closest = min(results, key=lambda res: math.dist(res[0], res[1]))
+    print(closest)</code></pre>
       </figure>
       <figure>
         <figcaption>multi_proc2.py results</figcaption>
-        <pre>
-          <code>
-$ time python multi_proc2.py
+        <pre><code class="language-shell">$ time python multi_proc2.py
 ((49, 97), (49, 96))
-
-real	0m5.277s
-user	0m38.252s
-sys	0m0.168s
-          </code>
-        </pre>
+python multi_proc2.py  35.08s user 0.22s system 759% cpu 4.650 total</code></pre>
       </figure>
       <p>
         Note that I only have 4 cores. "cpu_count" returns 8 on my system due to
@@ -313,9 +285,15 @@ sys	0m0.168s
         processes, I probably don't see much benefit beyond 4 parallel tasks.
       </p>
       <p>
-        Given all that, reducing total execution time to ~25% of the single
+        Given all that, reducing total execution time to ~29% of the single
         threaded solution is pretty good!
       </p>
+      <div class="end">
+        &#8718;
+      </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-bash.min.js"></script>
   </body>
 </html>
