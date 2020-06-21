@@ -1,7 +1,17 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>A Python Concurrency Tutorial</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/themes/prism.min.css"
+    />
+    <title>
+      Plugin Architecture in Python (aka Py3EE)
+    </title>
   </head>
   <body>
     <style>
@@ -9,36 +19,49 @@
         max-width: 700px;
         margin: auto;
       }
+      body {
+        font-family: "Roboto", sans-serif;
+      }
+      pre {
+        /* font-size: 14px; */
+      }
+      .end {
+        font-size: 50px;
+        direction: rtl;
+      }
     </style>
     <div class="content">
       <h1>
-        Dependency Direction and Plugin Architecture in Python (aka Python3EE)
+        Plugin Architecture in Python (aka Py3EE)
       </h1>
       <p>By <a href="/">Edward D'Souza</a> (June 14th, 2020)</p>
       <hr />
       <p>
-        When I came to Python from Java, I reveled in the terseness and
-        flexiblity of Python. However, as I'm reading through "Clean
-        Architecture" by Robert C. Martin, I'm seeing that some of the
-        enterprisey ideas from Java are actually quite useful with building
-        large systems in team-envrionments. In this artcle I look at how
-        dependency direction and interfaces can be used to create a plugin
-        architecture in Python.
+        When I came to Python from Java, I reveled in terseness and flexiblity.
+        However, as I'm reading through "Clean Architecture" by Robert C.
+        Martin, I'm seeing that some of the enterprisey ideas from Java are
+        actually quite useful. In this artcle I look at how dependency direction
+        and interfaces can be used to create a plugin architecture in Python.
       </p>
       <p>
-        While the ideas might seem like over engineering in the toy example
-        here, I think they would be valuable in more realistic contexts with
-        more complicated code and when you have multiple people or teams working
-        together.
+        The toy example here might look over-engineered, but it lets us explore
+        ideas that would be valuable in more realistic contexts when you have
+        multiple people working together.
       </p>
       <p>
-        (The example here and some code is taken from "Clean Architecture".)
+        (The example and many concepts are taken from "Clean Architecture".)
       </p>
       <h1>Sections</h1>
       <ul>
         <li><a href="#example-problem">Example problem</a></li>
-        <li><a href="#basic-algorithm">Basic Solution</a></li>
-        <li><a href="#single-thread">Enterprise Edition</a></li>
+        <li><a href="#basic-solution">Basic Solution</a></li>
+        <li><a href="#enterprise-solution">Enterprise Solution</a></li>
+        <ul>
+          <li>
+            <a href="#policy">High-level Policy</a>
+          </li>
+          <li><a href="#implementation">Enterprise Implementation</a></li>
+        </ul>
       </ul>
       <h2 id="example-problem">Example Problem</h2>
       <p>
@@ -48,233 +71,136 @@
       </p>
       <p>
         First, the easy part. The functional data-manipulation component that
-        simple translates a character to its encrypted form using a shift
+        simply translates a character to its encrypted form using a shift
         cipher.
       </p>
-      <figure>
-        <figcaption>translate.py</figcaption>
-        <pre>
-          <code>
-def translate(char: str):
+      <pre><code class="language-python">def translate(char: str):
     shift = 1
     letters = string.ascii_lowercase
     if char in letters:
         return letters[(letters.index(char) + shift) % len(letters)]
-    return char
-          </code>
-        </pre>
-      </figure>
-      <h3 id="basic-algorithm">Basic Solution</h3>
+    return char</code></pre>
+      <h2 id="basic-solution">Basic Solution</h2>
       <p>
-        Here is a straight-forward solution. It's probably what I would write by
-        default when faced with the above requirements.
+        Here is a straight-forward solution to the full problem. It's probably
+        what I would write by default when faced with the above requirements.
+      </p>
+      <pre><code class="language-python">import sys
+from translate import translate
+
+def encrypt():
+    data = sys.stdin.readlines()
+    for line in data:
+        for char in line:
+            print(translate(char))
+
+encrypt()</code></pre>
+      <p>
+        The code is beautiful in its terseness, but has a few potential issues.
       </p>
       <p>
-        To make things more flexible later, we're going to structure it as a
-        function that takes in two sets of points ("from" and "to") and finds
-        the closest pair of points between the two sets. To find the closest
-        pair within an entire set of points, we can pass in the same set of
-        points to both arguments.
-      </p>
-      <figure>
-        <figcaption>main.py</figcaption>
-        <pre>
-          <code>
-from algorithm import closest_pair
-
-points = [(0,1), (9, 10), (2, 3)]
-print(closest_pair(points, points))  # --> ((0, 1), (2, 3))
-          </code>
-        </pre>
-      </figure>
-      <figure>
-        <figcaption>algorithm.py</figcaption>
-        <pre>
-          <code>
-
-          </code>
-        </pre>
-      </figure>
-      <h2 id="single-thread">Single-threaded performance</h2>
-      <p>
-        As a baseline, let's look at the how long it takes the algorithm to
-        complete using a single thread. Note that I'm using NUM_POINTS = 3500
-        for all the examples to make the problem sizable enough to measure on my
-        machine.
-      </p>
-      <figure>
-        <figcaption>single_thread1.py</figcaption>
-        <pre>
-          <code>
-from algorithm import closest_pair, generate_points
-
-points = generate_points()
-closest = closest_pair(points, points)
-print(closest)
-          </code>
-        </pre>
-      </figure>
-      <figure>
-        <figcaption>single_thread1.py results</figcaption>
-        <pre>
-          <code>
-$ time python single_thread1.py
-((49, 97), (49, 96))
-
-real    0m18.904s
-user    0m18.665s
-sys     0m0.056s
-          </code>
-        </pre>
-      </figure>
-      <h2 id="multi-thread">Multi-threaded performance</h2>
-      <p>
-        In a CPU bound task, there shouldn't be any benefit to using multiple
-        threads, because of the
-        <a
-          href="https://docs.python.org/3/glossary.html#term-global-interpreter-lock"
-          >GIL</a
-        >. But we're going to do it anyway just to see what happens.
-      </p>
-      <figure>
-        <figcaption>multi_thread1.py</figcaption>
-        <pre>
-          <code>
-
-          </code>
-        </pre>
-      </figure>
-      <figure>
-        <figcaption>multi_thread1.py results</figcaption>
-        <pre>
-          <code>
-$ time python multi_thread1.py
-((7, 42), (8, 42))
-
-real	0m18.996s
-user	0m18.710s
-sys	0m0.135s
-          </code>
-        </pre>
-      </figure>
-      <p>As expected, there was no speed up with multiple threads.</p>
-      <h2 id="multi-proc">Multi-process performance</h2>
-      <p>
-        Our final move is using multiple processes. The multi-threading code
-        above can be adapted with minimal changes to make it use multiple
-        processes instead.
-      </p>
-      <h3 id="basic-multi-process">Initial Solution</h3>
-      <figure>
-        <figcaption>multi_proc1.py</figcaption>
-        <pre>
-          <code>
-from multiprocessing import Process, Queue
-import threading
-
-from algorithm import closest_pair, distance, generate_points
-
-points = generate_points()
-
-q = Queue()
-
-x1 = Process(
-    target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[:len(points) // 2], points),
-)
-x2 = Process(
-    target=lambda *args: q.put(closest_pair(*args)),
-    args=(points[len(points) // 2:], points),
-)
-x1.start()
-x2.start()
-x1.join()
-x2.join()
-
-res1 = q.get()
-res2 = q.get()
-
-closest = min([res1, res2], key=lambda res: distance(res[0], res[1]))
-print(closest)
-          </code>
-        </pre>
-      </figure>
-      <figure>
-        <figcaption>multi_proc1.py results</figcaption>
-        <pre>
-          <code>
-$ time python multi_process.py
-((7, 42), (8, 42))
-
-real	0m9.647s
-user	0m19.009s
-sys	0m0.073s
-          </code>
-        </pre>
-      </figure>
-      <p>
-        Here we see the expected, ideal 2x speed up by splitting the work across
-        two processes.
-      </p>
-      <h3 id="maxing-parallelism">Maxing out the parallelism</h3>
-      <p>
-        We can clean up the code a little with multiprocessing.Pool and bump the
-        level of parallelism to match the system's CPU count.
-      </p>
-      <figure>
-        <figcaption>multi_proc2.py</figcaption>
-        <pre>
-          <code>
-import itertools
-import multiprocessing
-
-from algorithm import closest_pair, distance, generate_points
-
-
-def segment_list(l, N):
-    chunk_size, remainder = divmod(len(l), N)
-    first, rest = l[:chunk_size + remainder], l[chunk_size + remainder:]
-    return itertools.chain([first], zip(*[iter(rest)] * chunk_size))
-
-
-points = generate_points()
-
-N = multiprocessing.cpu_count()  # 8 for me.
-segments = segment_list(points, N)
-
-def do_it(segment):
-    return closest_pair(segment, points)
-
-pool = multiprocessing.Pool(processes=N)
-results = pool.map(do_it, segments)
-
-closest = min(results, key=lambda res: distance(res[0], res[1]))
-print(closest)
-          </code>
-        </pre>
-      </figure>
-      <figure>
-        <figcaption>multi_proc2.py results</figcaption>
-        <pre>
-          <code>
-$ time python multi_proc2.py
-((49, 97), (49, 96))
-
-real	0m5.277s
-user	0m38.252s
-sys	0m0.168s
-          </code>
-        </pre>
-      </figure>
-      <p>
-        Note that I only have 4 cores. "cpu_count" returns 8 on my system due to
-        hyperthreading, but since I'm executing the exact same function on all
-        processes, I probably don't see much benefit beyond 4 parallel tasks.
+        The main problem is that it's mixing together several responsibilies:
+        getting the characters, translation, and outputting the characters. If
+        we had multiple people that wanted to modify those parts at the same
+        time, it would be a mess getting everyone to work together in such a
+        tight space.
       </p>
       <p>
-        Given all that, reducing total execution time to ~25% of the single
-        threaded solution is pretty good!
+        As a high-level policy, it also shouldn't be depending directly on
+        low-level details like the "print" function.
       </p>
+      <p>
+        One strategy we can use to fix the above problems is to make the code
+        work with generic interfaces. Specific implementations of those
+        interfaces can then be plugged into the policy to create a working
+        system. The policy is then decoupled from low-level details, and the
+        code is organized so that the input and output concerns are nicely
+        separated.
+      </p>
+      <h2 id="enterprise-solution">Enterprise Solution</h2>
+      <p>
+        Welcome to Py3EE.
+      </p>
+      <h3 id="policy">High-level Policy</h3>
+      <pre><code class="language-python">import abc
+from translate import translate
+
+
+class CharReader(abc.ABC):
+    @abc.abstractmethod
+    def read_char(self):
+        pass
+
+
+class CharWriter(abc.ABC):
+    @abc.abstractmethod
+    def write_char(self, char: str):
+        pass
+
+
+def encrypter(reader: CharReader, writer: CharWriter):
+    def encrypt():
+        while True:
+            try:
+                char = reader.read_char()
+            except StopIteration:
+                break
+            encrypted_char = translate(char)
+            writer.write_char(encrypted_char)
+
+    return encrypt</code></pre>
+      <p>
+        Now, we've clearly and explicitly spelled out the high-level policy of
+        reading a character, encrypting it with the translate function, and
+        writing out the encryped character.
+      </p>
+      <p>
+        The algorithm does not know or care about the stdin module or the print
+        function. It remains open to be re-used in different contexts, with
+        different input sources and output channels.
+      </p>
+      <h3 id="implementation">Enterprise Implementation</h3>
+      <p>
+        Admittedly, like a lot of enterprisey code, our policy is fairly verbose
+        and doesn't actually do anything. To make it useful, we need to
+        implement the CharReader and CharWriter interfaces and then plug them
+        into the policy function.
+      </p>
+      <pre><code class="language-python">import sys
+from enterprise import CharReader, CharWriter, encrypter
+
+
+class MyCharReader(CharReader):
+    def __init__(self):
+        def get_characters():
+            data = sys.stdin.readlines()
+            for line in data:
+                for char in line:
+                    yield char
+
+        self.iter = get_characters()
+
+    def read_char(self):
+        return next(self.iter)
+
+
+class MyCharWriter(CharWriter):
+    def write_char(self, char: str):
+        print(char)
+
+
+my_encrypter = encrypter(MyCharReader(), MyCharWriter())
+my_encrypter()</code></pre>
+      <p>
+        What's cool is that the messiness of converting stdin into a stream of
+        characters is contained within MyCharReader. No one else has to be
+        burdened by it.
+      </p>
+      <div class="end">
+        &#8718;
+      </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-python.min.js"></script>
   </body>
 </html>

@@ -12,30 +12,33 @@
     </style>
     <div class="content">
       <h1>
-        Dependency Direction and Plugin Architecture in Python (aka Python3EE)
+        A Python Concurrency Tutorial
       </h1>
       <p>By <a href="/">Edward D'Souza</a> (June 14th, 2020)</p>
       <hr />
       <p>
-        When I came to Python from Java, I reveled in the terseness and
-        flexiblity of Python. However, as I'm reading through "Clean
-        Architecture" by Robert C. Martin, I'm seeing that some of the
-        enterprisey ideas from Java are actually quite useful with building
-        large systems in team-envrionments. In this artcle I look at how
-        dependency direction and interfaces can be used to create a plugin
-        architecture in Python.
-      </p>
-      <p>
-        While the ideas might seem like over engineering in the toy example
-        here, I think they would be valuable in more realistic contexts with
-        more complicated code and when you multiple people or teams working
-        together.
+        I've always been afraid of concurrency in Python. Threading isn't
+        supposed to be a good idea because of the GIL. Multi-processing sounds
+        complicated. In this article I look at what happpens if you try
+        concurrency wiith a simple, computationally intensive task. I found that
+        parallelizing tasks with multiple processes is both effective and
+        surpisingly simple in Python.
       </p>
       <h1>Sections</h1>
       <ul>
         <li><a href="#example-problem">Example problem</a></li>
-        <li><a href="#basic-algorithm">Basic Solution</a></li>
-        <li><a href="#single-thread">Enterprise Edition</a></li>
+        <ul>
+          <li><a href="#basic-algorithm">Basic algorithm</a></li>
+        </ul>
+        <li><a href="#single-thread">Single-threaded performance</a></li>
+        <li><a href="#multi-thread">Multi-threaded performance</a></li>
+        <li><a href="#multi-proc">Multi-process performance</a></li>
+        <ul>
+          <li>
+            <a href="#basic-multi-process">Initial multi-process solution</a>
+          </li>
+          <li><a href="#maxing-parallelism">Maxing out the parallelism</a></li>
+        </ul>
       </ul>
       <h2 id="example-problem">Example Problem</h2>
       <p>
