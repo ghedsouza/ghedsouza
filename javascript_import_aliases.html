@@ -44,13 +44,13 @@
       </p>
       <pre><code class="language-javascript">import {dateFormat} from '../../../../src/lib/date';</code></pre>
       <p>
-        Luckily, you can make things better with alisaes. If `src` is a
-        top-level directory in your project, you can add an alias for `src` to
-        let you write the above import like this:
+        Luckily, you can make things better with aliases. If "src" is a
+        top-level directory in your project, you can add an "@src" alias for
+        "src" to let you write the above import like this:
       </p>
       <pre><code class="language-javascript">import {dateFormat} from '@src/lib/date';</code></pre>
       <p>
-        The steps to make the above possible are simple, but arduous. Because
+        The steps to enable the above code are simple, but arduous. Because
         there is no single standard way to specify aliases in JavaScript, you
         need to define the alias in the configuration of every environment that
         will be interpreting your JavaScript code. In a typical project these
@@ -143,8 +143,8 @@ module.exports = {
 };</code></pre>
       <h3>Visual Studio Code (jsconfig.json)</h3>
       <p>
-        Unfortunately, editors need their own setup to setup to understand the
-        aliases. For VS Code, you can use the following
+        Unfortunately, editors need their own setup to understand the aliases.
+        For VS Code, you can use the following
         <a
           href="https://code.visualstudio.com/docs/languages/jsconfig#_using-webpack-aliases"
           >jsconfig.json</a
