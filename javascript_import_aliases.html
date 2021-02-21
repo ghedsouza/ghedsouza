@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How To: Absolute imports in JavaScript</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/themes/prism.min.css"
+    />
+  </head>
+  <body>
+    <style>
+      .content {
+        max-width: 700px;
+        margin: auto;
+      }
+      body {
+        font-family: "Roboto", sans-serif;
+      }
+      pre {
+        /* font-size: 14px; */
+      }
+      .end {
+        font-size: 50px;
+        direction: rtl;
+      }
+    </style>
+    <div class="content">
+      <h1>How To: Absolute imports in JavaScript</h1>
+      <p>By <a href="/">Edward D'Souza</a> (Feburary 20th, 2021)</p>
+      <hr />
+      <h2>Summary</h2>
+      <p>
+        In JavaScript, imports with relative paths going up more than one level
+        are cumbersome.
+      </p>
+      <pre><code class="language-javascript">import {dateFormat} from '../../../../src/lib/date';</code></pre>
+      <p>
+        You can make things better with aliases. If "src" is a top-level
+        directory in your project, you can add an "@src" alias for "src" to let
+        you write the above import like this:
+      </p>
+      <pre><code class="language-javascript">import {dateFormat} from '@src/lib/date';</code></pre>
+      <p>
+        The steps to enable the above code are simple, but tedious. Because
+        there is no standard way to specify aliases in JavaScript, you need to
+        define the alias in the configuration of every environment that will be
+        interpreting your JavaScript code. In a typical project these places
+        would include:
+      </p>
+      <ul>
+        <li>Webpack (webpack.config.js)</li>
+        <li>Jest (jest.config.js)</li>
+        <li>ESLint (.eslintrc.js)</li>
+        <li>Visual Studio Code (jsconfig.json)</li>
+      </ul>
+      <p>
+        If you miss one of the above, e.g. leaving out Jest, you will encounter
+        problems with environments not understanding your imports. To get the
+        alias to work generally, you have to be thorough.
+      </p>
+      <h2>Detailed Guide</h2>
+      <p>
+        Below are instructions on how to update each of the above configs to add
+        an alias mapping. I'm using the example of mapping a top-level directory
+        named "src", but it will of course work with any directory. We are going
+        to map the alias "@src" to "src".
+      </p>
+      <h3>Webpack (webpack.config.js)</h3>
+      <p>
+        In your Webpack config (e.g. webpack.config.js) find the "resolve"
+        section, and then add an "alias" section under it. Then add the "@src"
+        -> "src" alias like so:
+      </p>
+      <pre><code class="language-javascript">const path = require("path");
+
+module.exports = {
+    // ...
+    resolve: {
+        // ...
+        alias: {
+            "@src": path.resolve("src"),
+        },
+        // ..
+    },
+    // ...
+};</code></pre>
+      <h3>Jest (jest.config.js)</h3>
+      <pre><code class="language-javascript">module.exports = {
+    // ...
+    moduleNameMapper: {
+        "^@src/(.*)$": "&lt;rootDir&gt;/src/$1",
+    },
+    // ...
+};</code></pre>
+      <h3>ESLint (.eslintrc.js)</h3>
+      <p>For ESLint, you'll need to add two NPM packages:</p>
+      <p></p>
+      <ul>
+        <li>
+          <a href="https://www.npmjs.com/package/eslint-plugin-import"
+            ><code>eslint-plugin-import</code></a
+          >
+        </li>
+        <li>
+          <a href="https://www.npmjs.com/package/eslint-import-resolver-alias"
+            ><code>eslint-import-resolver-alias</code></a
+          >
+          <ul>
+            <li>
+              Note that this second package is a plugin for the first. It adds
+              support for aliases. There may be alternative packages available
+              if this one doesn't work. See the
+              <a
+                href="https://github.com/benmosher/eslint-plugin-import#resolvers"
+                >eslint-plugin-import readme</a
+              >
+              for more details. Apologies if this appears to be a house of cards
+              at this point.
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <pre><code class="language-javascript">module.exports = {
+    // ...
+    settings: {
+        "import/resolver": {
+            alias: {
+                map: [["@src", "./src"]],
+            },
+        },
+    },
+    // ...
+};</code></pre>
+      <h3>Visual Studio Code (jsconfig.json)</h3>
+      <p>
+        Unfortunately, editors need their own setup to understand the aliases.
+        For VS Code, you can use the following
+        <a
+          href="https://code.visualstudio.com/docs/languages/jsconfig#_using-webpack-aliases"
+          >jsconfig.json</a
+        >. For other editors, you'll have to do something similar. Note the very
+        important last line to exclude node_modules.
+      </p>
+      <pre><code class="language-json">{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+            "@src/*": ["src/*"]
+        }
+    },
+    "exclude": ["node_modules"]
+}</code></pre>
+      <h2>Final Advice</h2>
+      <p>
+        The lack of standardization for aliases is a mess. Given how popular
+        they're becoming, hopefully we see some consolidation in this space.
+        Until then, please treat these instructions as a rough guide. Good luck!
+      </p>
+      <div class="end">&#8718;</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-python.min.js"></script>
+  </body>
+</html>
