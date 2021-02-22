@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
@@ -45,6 +45,9 @@
       .end {
         font-size: 50px;
         direction: rtl;
+      }
+      ul.spaced li:not(:last-child) {
+        margin-bottom: 15px;
       }
     </style>
     <div class="content">
@@ -118,7 +121,7 @@ module.exports = {
       <h3>ESLint (.eslintrc.js)</h3>
       <p>For ESLint, you'll need to add two NPM packages:</p>
       <p></p>
-      <ul>
+      <ul class="spaced">
         <li>
           <a href="https://www.npmjs.com/package/eslint-plugin-import"
             ><code>eslint-plugin-import</code></a
