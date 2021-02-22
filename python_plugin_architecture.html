@@ -2,9 +2,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>
-      Plugin Architecture in Python (aka Py3EE)
-    </title>
+    <title>Plugin Architecture in Python (aka Py3EE)</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
       rel="stylesheet"
@@ -13,6 +11,19 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/themes/prism.min.css"
     />
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-BXN0VFCVND"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-BXN0VFCVND");
+    </script>
   </head>
   <body>
     <style>
@@ -32,9 +43,7 @@
       }
     </style>
     <div class="content">
-      <h1>
-        Plugin Architecture in Python (aka Py3EE)
-      </h1>
+      <h1>Plugin Architecture in Python (aka Py3EE)</h1>
       <p>By <a href="/">Edward D'Souza</a> (June 21st, 2020)</p>
       <hr />
       <p>
@@ -119,9 +128,7 @@ encrypt()</code></pre>
         separated.
       </p>
       <h2 id="enterprise-solution">Enterprise Solution</h2>
-      <p>
-        Welcome to Py3EE.
-      </p>
+      <p>Welcome to Py3EE.</p>
       <h3 id="policy">High-level Policy</h3>
       <pre><code class="language-python">import abc
 from translate import translate
@@ -197,9 +204,7 @@ my_encrypter()</code></pre>
         characters is contained within MyCharReader. No one else has to be
         burdened by it.
       </p>
-      <div class="end">
-        &#8718;
-      </div>
+      <div class="end">&#8718;</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-python.min.js"></script>
